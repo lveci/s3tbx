@@ -193,7 +193,7 @@ public class LandsatGeotiffReader extends AbstractProductReader {
                     band.setDescription(landsatMetadata.getBandDescription(bandNumber));
                     band.setUnit(RADIANCE_UNITS);
                     final Preferences preferences = Config.instance("s3tbx").load().preferences();
-                    final String readAs = preferences.get(LandsatGeotiffReader.SYSPROP_READ_AS, null);
+                    final String readAs = READ_AS_REFLECTANCE;//preferences.get(LandsatGeotiffReader.SYSPROP_READ_AS, null);
                     if (readAs != null) {
                         switch (readAs.toLowerCase()) {
                             case READ_AS_REFLECTANCE:
