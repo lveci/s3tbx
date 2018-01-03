@@ -77,7 +77,7 @@ public class OlciLandClassificationOp extends Operator {
         nnInterpreter = OlciCloudNNInterpreter.create();
         readSchillerNeuralNets();
         createTargetProduct();
-        
+
         landWaterBand = waterMaskProduct.getBand("land_water_fraction");
 
     }
