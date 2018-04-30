@@ -60,6 +60,8 @@ public class SlstrLevel1ProductFactory extends SlstrProductFactory {
 
     public final static String SLSTR_L1B_USE_PIXELGEOCODINGS = "s3tbx.reader.slstrl1b.pixelGeoCodings";
     public final static String SLSTR_L1B_LOAD_ORPHAN_PIXELS = "s3tbx.reader.slstrl1b.loadOrphanPixels";
+    public final static String SLSTR_L1B_CUSTOM_CALIBRATION = "s3tbx.reader.slstrl1b.applyCustomCalibration";
+    public final static String SLSTR_L1B_CALIBRATION_PATTERN = "s3tbx.reader.slstrl1b.ID.calibration.TYPE";
 
     //todo read all these as metadata - tf 20160401
     // --> included Sn_quality_*.nc products to access solar irradiances - od 20170630
@@ -181,8 +183,30 @@ public class SlstrLevel1ProductFactory extends SlstrProductFactory {
             ((Band) targetNode).setSpectralWavelength(nameToWavelengthMap.get(sourceBandNameStart));
             ((Band) targetNode).setSpectralBandIndex(nameToIndexMap.get(sourceBandNameStart));
             ((Band) targetNode).setSpectralBandwidth(nameToBandwidthMap.get(sourceBandNameStart));
+            if (applyCustomCalibration()) {
+                final double calibrationOffset = getCalibrationOffset(sourceBandNameStart);
+                if (!Double.isNaN(calibrationOffset)) {
+                    targetNode.setScalingOffset(calibrationOffset);
+                }
+                final double calibrationFactor = getCalibrationFactor(sourceBandNameStart);
+                if (!Double.isNaN(calibrationFactor)) {
+                    targetNode.setScalingFactor(calibrationFactor);
+                }
+            }
         }
         configureDescription(sourceBand, targetNode);
+    }
+
+    private double getCalibrationOffset(String sourceBandNameStart) {
+        String calibrationOffsetPropertyName =
+                SLSTR_L1B_CALIBRATION_PATTERN.replace("ID", sourceBandNameStart.toLowerCase()).replace("TYPE", "offset");
+        return Config.instance("s3tbx").load().preferences().getDouble(calibrationOffsetPropertyName, Double.NaN);
+    }
+
+    private double getCalibrationFactor(String sourceBandNameStart) {
+        String calibrationFactorPropertyName =
+                SLSTR_L1B_CALIBRATION_PATTERN.replace("ID", sourceBandNameStart.toLowerCase()).replace("TYPE", "factor");
+        return Config.instance("s3tbx").load().preferences().getDouble(calibrationFactorPropertyName, Double.NaN);
     }
 
     protected void configureDescription(Band sourceBand, RasterDataNode targetNode) {
@@ -355,6 +379,10 @@ public class SlstrLevel1ProductFactory extends SlstrProductFactory {
 
     protected boolean isOrphanPixelsAllowed() {
         return Config.instance("s3tbx").load().preferences().getBoolean(SLSTR_L1B_LOAD_ORPHAN_PIXELS, false);
+    }
+
+    private boolean applyCustomCalibration() {
+        return Config.instance("s3tbx").load().preferences().getBoolean(SLSTR_L1B_CUSTOM_CALIBRATION, false);
     }
 
     protected void loadOrphanPixelBands(Product targetProduct, final Product sourceProduct) throws IOException {
